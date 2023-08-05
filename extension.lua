@@ -140,7 +140,7 @@ local AutoAdjustIncrement = function(direction)
 
     if dialog.data.force_tiling then
         AdjustIncrement(direction * 4)
-    else 
+    else
         AdjustIncrement(direction)
     end
 
@@ -288,10 +288,7 @@ local DithererDialog = function()
         decimals = 0,
         text = "1",
         onchange = function()
-
             AdjustScale(0)
-            -- if dialog.data.scale < 1 then dialog:modify { id = "scale", text = "1" } end
-            
         end
     }
 
