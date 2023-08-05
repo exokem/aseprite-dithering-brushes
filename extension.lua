@@ -91,9 +91,7 @@ local brushImage = RecolorImage(previewImage)
 
 local BuildBrushImage = function()
 
-    -- TODO: size must be even
-    -- TODO: scaling
-    local size = dialog.data.size
+    local size = brushImage.width + dialog.data.increment
 
     local image = Image(size, size)
 
@@ -109,6 +107,14 @@ local BuildBrushImage = function()
         end
 
     end
+
+    local scale = dialog.data.scale
+
+    -- local scaled = Image(size * scale, size * scale)
+
+    -- scaled:drawImage(image, 0, 0, size, size, 0, 0, scaled.width, scaled.height)
+
+    image:resize(size * scale, size * scale)
 
     return image
 
@@ -185,22 +191,42 @@ local DithererDialog = function()
         end
     }
 
-    :separator { text = "Brush Size" }
-    :slider
+    :separator { text = "Size Increment" }
+    :number
     {
-        id = "size",
-        min = 4,
-        max = 20,
-        value = 4
+        id = "increment",
+        decimals = 0,
+        text = "0",
+        onchange = function()
+
+            local inc = dialog.data.increment
+
+            if inc % 2 ~= 0 and not dialog.data.allow_odd then
+
+                dialog:modify
+                {
+                    id = "increment",
+                    text = "" .. (inc + 1)
+                }
+
+            end
+
+        end
+    }
+
+    :check
+    {
+        id = "allow_odd",
+        text = "Allow Odd Increments",
+        selected = false
     }
 
     :separator { text = "Brush Scale" }
-    :slider
+    :number
     {
         id = "scale",
-        min = 1,
-        max = 10,
-        value = 1
+        decimals = 0,
+        text = "1"
     }
 
     :button
