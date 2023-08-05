@@ -27,6 +27,14 @@ local templates =
     65535, -- 0b1111111111111111,
 }
 
+local NextMultiple = function(value, interval)
+
+    if value % interval == 0 then return value end
+
+    return value + interval - (value % interval)
+
+end
+
 local ReadTemplateImage = function(size, template)
 
     if size < 4 then size = 4 end
@@ -110,13 +118,41 @@ local BuildBrushImage = function()
 
     local scale = dialog.data.scale
 
-    -- local scaled = Image(size * scale, size * scale)
-
-    -- scaled:drawImage(image, 0, 0, size, size, 0, 0, scaled.width, scaled.height)
-
     image:resize(size * scale, size * scale)
 
     return image
+
+end
+
+local AdjustIncrement = function(delta)
+    
+    local inc = dialog.data.increment + delta
+
+    if inc < 0 then inc = 0 end
+
+    if dialog.data.force_tiling then inc = NextMultiple(inc, 4) end
+
+    dialog:modify { id = "increment", text = ""..inc }
+
+end
+
+local AutoAdjustIncrement = function(direction)
+
+    if dialog.data.force_tiling then
+        AdjustIncrement(direction * 4)
+    else 
+        AdjustIncrement(direction)
+    end
+
+end
+
+local AdjustScale = function(delta)
+
+    local scale = dialog.data.scale + delta
+
+    if scale < 1 then scale = 1 end
+
+    dialog:modify { id = "scale", text = ""..scale }
 
 end
 
@@ -199,28 +235,50 @@ local DithererDialog = function()
         text = "0",
         onchange = function()
 
-            local inc = dialog.data.increment
+            AdjustIncrement(0)
 
-            if inc < 0 then dialog:modify { id = "increment", text = "0" } end
+        end
+    }
 
-            if inc % 2 ~= 0 and not dialog.data.allow_odd then
+    :slider
+    {
+        id = "inc_slider",
+        min = -100,
+        max = 100,
+        value = 0,
+        onchange = function()
+            local value = dialog.data.inc_slider
+            
+            AutoAdjustIncrement(value)
 
-                dialog:modify
-                {
-                    id = "increment",
-                    text = "" .. (inc + 1)
-                }
+            dialog:modify { id = "inc_slider", value = 0 }
+        end
+    }
 
-            end
+    :button
+    {
+        text = "-",
+        onclick = function()
+            AutoAdjustIncrement(-1)
+        end
+    }
 
+    :button
+    {
+        text = "+",
+        onclick = function()
+            AutoAdjustIncrement(1)
         end
     }
 
     :check
     {
-        id = "allow_odd",
-        text = "Allow odd increments",
-        selected = false
+        id = "force_tiling",
+        text = "Force tiling",
+        selected = false,
+        onclick = function()
+            AdjustIncrement(0)
+        end
     }
 
     :separator { text = "Brush Scale" }
@@ -231,8 +289,24 @@ local DithererDialog = function()
         text = "1",
         onchange = function()
 
-            if dialog.data.scale < 1 then dialog:modify { id = "scale", text = "1" } end
+            AdjustScale(0)
+            -- if dialog.data.scale < 1 then dialog:modify { id = "scale", text = "1" } end
             
+        end
+    }
+
+    :slider
+    {
+        id = "scale_slider",
+        min = -100,
+        max = 100,
+        value = 0,
+        onchange = function()
+            local value = dialog.data.scale_slider
+            
+            AdjustScale(value)
+
+            dialog:modify { id = "scale_slider", value = 0 }
         end
     }
 
