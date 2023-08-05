@@ -68,19 +68,43 @@ local ReadTemplateImage = function(size, template)
 
 end
 
-local BuildBrushImage = function(size, scale, templateImage)
+local RecolorImage = function(image)
+    
+    local recolored = image:clone()
 
-    local scaledSize = size * scale
-    local image = Image(scaledSize, scaledSize)
+    for pixel in recolored:pixels() do
 
-    local tx = math.ceil(scaledSize / templateImage.width) + 1
-    local ty = math.ceil(scaledSize / templateImage.height) + 1
+        if pixel() == zero then
+            pixel(app.bgColor.rgbaPixel)
+        else
+            pixel(app.fgColor.rgbaPixel)
+        end
+
+    end
+
+    return recolored
+
+end
+
+local previewImage = ReadTemplateImage(4, templates[9])
+local brushImage = RecolorImage(previewImage)
+
+local BuildBrushImage = function()
+
+    -- TODO: size must be even
+    -- TODO: scaling
+    local size = dialog.data.size
+
+    local image = Image(size, size)
+
+    local tx = math.ceil(size / (brushImage.width))
+    local ty = math.ceil(size / (brushImage.height))
 
     for y = 0, ty do
 
         for x = 0, tx do
             
-            image:drawImage(templateImage, Point(x * templateImage.width, y * templateImage.height))
+            image:drawImage(brushImage, Point(x * brushImage.width, y * brushImage.height))
 
         end
 
@@ -89,8 +113,6 @@ local BuildBrushImage = function(size, scale, templateImage)
     return image
 
 end
-
-local previewImage = ReadTemplateImage(4, templates[9])
 
 local DithererDialog = function()
 
@@ -144,22 +166,12 @@ local DithererDialog = function()
             local tvAbs = 24 / ss
             local tv = math.floor(tvAbs)
 
-            local image = previewImage:clone()
-
-            for pixel in image:pixels() do
-
-                if pixel() == zero then
-                    pixel(app.bgColor.rgbaPixel)
-                else
-                    pixel(app.fgColor.rgbaPixel)
-                end
-
-            end
+            brushImage = RecolorImage(previewImage)
 
             for y = 0, tv - 1 do
 
                 for x = 0, th - 1 do
-                    c:drawImage(image, 0, 0, 4, 4, 4 + x * ss, 4 + y * ss, ss, ss)
+                    c:drawImage(brushImage, 0, 0, 4, 4, 4 + x * ss, 4 + y * ss, ss, ss)
                 end
                 
             end
@@ -168,12 +180,12 @@ local DithererDialog = function()
             local rsw = math.floor(remainder * 4)
             local rdw = rsw * 3
 
-            c:drawImage(image, 0, 0, rsw, 4, 4 + th * ss, 4, rdw, ss)
-            c:drawImage(image, 0, 0, rsw, 4, 4 + th * ss, 4 + ss, rdw, ss)
+            c:drawImage(brushImage, 0, 0, rsw, 4, 4 + th * ss, 4, rdw, ss)
+            c:drawImage(brushImage, 0, 0, rsw, 4, 4 + th * ss, 4 + ss, rdw, ss)
         end
     }
 
-    :separator { text = "Size" }
+    :separator { text = "Brush Size" }
     :slider
     {
         id = "size",
@@ -182,7 +194,7 @@ local DithererDialog = function()
         value = 4
     }
 
-    :separator { text = "Scale" }
+    :separator { text = "Brush Scale" }
     :slider
     {
         id = "scale",
@@ -198,7 +210,7 @@ local DithererDialog = function()
         onclick = function()
             app.activeBrush = Brush
             {
-                image = BuildBrushImage(dialog.data.size, dialog.data.scale, previewImage),
+                image = BuildBrushImage(),
                 pattern = BrushPattern.ORIGIN
             }
         end
