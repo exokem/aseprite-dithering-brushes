@@ -151,7 +151,7 @@ local DithererDialog = function()
         colors = { app.fgColor, app.bgColor }
     }
 
-    :separator { text = "Preview" }
+    :separator { text = "Pattern Preview" }
     :canvas
     {
         id = "previewCanvas",
@@ -191,7 +191,7 @@ local DithererDialog = function()
         end
     }
 
-    :separator { text = "Size Increment" }
+    :separator { text = "Pattern Size Increment" }
     :number
     {
         id = "increment",
@@ -200,6 +200,8 @@ local DithererDialog = function()
         onchange = function()
 
             local inc = dialog.data.increment
+
+            if inc < 0 then dialog:modify { id = "increment", text = "0" } end
 
             if inc % 2 ~= 0 and not dialog.data.allow_odd then
 
@@ -217,7 +219,7 @@ local DithererDialog = function()
     :check
     {
         id = "allow_odd",
-        text = "Allow Odd Increments",
+        text = "Allow odd increments",
         selected = false
     }
 
@@ -226,7 +228,12 @@ local DithererDialog = function()
     {
         id = "scale",
         decimals = 0,
-        text = "1"
+        text = "1",
+        onchange = function()
+
+            if dialog.data.scale < 1 then dialog:modify { id = "scale", text = "1" } end
+            
+        end
     }
 
     :button
