@@ -6,6 +6,8 @@ local sprite = app.activeSprite
 local zero = app.pixelColor.rgba(0, 0, 0)
 local one = app.pixelColor.rgba(255, 255, 255)
 
+local doAutoApply = false
+
 local templates =
 {
     0,     -- 0b0000000000000000,
@@ -124,6 +126,21 @@ local BuildBrushImage = function()
 
 end
 
+
+local Apply = function()
+    app.activeBrush = Brush
+    {
+        image = BuildBrushImage(),
+        pattern = BrushPattern.ORIGIN
+    }
+end
+
+local AutoApply = function()
+
+    if doAutoApply then Apply() end
+
+end
+
 local AdjustIncrement = function(delta)
     
     local inc = dialog.data.increment + delta
@@ -133,6 +150,8 @@ local AdjustIncrement = function(delta)
     if dialog.data.force_tiling then inc = NextMultiple(inc, 4) end
 
     dialog:modify { id = "increment", text = ""..inc }
+
+    AutoApply()
 
 end
 
@@ -154,6 +173,8 @@ local AdjustScale = function(delta)
 
     dialog:modify { id = "scale", text = ""..scale }
 
+    AutoApply()
+
 end
 
 local DithererDialog = function()
@@ -173,9 +194,10 @@ local DithererDialog = function()
         min = 1,
         max = 17,
         value = 9,
-        onchange = function() 
+        onchange = function()
             previewImage = ReadTemplateImage(4, templates[dialog.data.density])
             dialog:repaint()
+            AutoApply()
         end
     }
 
@@ -184,7 +206,10 @@ local DithererDialog = function()
     {
         id = "colors",
         mode = "pick",
-        colors = { app.fgColor, app.bgColor }
+        colors = { app.fgColor, app.bgColor },
+        onclick = function()
+            AutoApply()
+        end
     }
 
     :separator { text = "Pattern Preview" }
@@ -281,6 +306,16 @@ local DithererDialog = function()
         end
     }
 
+    :check
+    {
+        id = "auto_apply",
+        text = "Apply Automatically",
+        selected = false,
+        onclick = function()
+            doAutoApply = not doAutoApply
+        end
+    }
+
     :separator { text = "Brush Scale" }
     :number
     {
@@ -312,11 +347,7 @@ local DithererDialog = function()
         id = "apply",
         text = "Apply",
         onclick = function()
-            app.activeBrush = Brush
-            {
-                image = BuildBrushImage(),
-                pattern = BrushPattern.ORIGIN
-            }
+            Apply()
         end
     }
 
